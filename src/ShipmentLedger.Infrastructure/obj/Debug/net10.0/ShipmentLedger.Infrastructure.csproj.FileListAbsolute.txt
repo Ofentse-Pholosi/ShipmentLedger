@@ -16,3 +16,5 @@ C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\obj\Deb
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\obj\Debug\net10.0\ShipmentLedger.Infrastructure.genruntimeconfig.cache
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\obj\Debug\net10.0\ref\ShipmentLedger.Infrastructure.dll
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\obj\Debug\net10.0\ShipmentLedger.Infrastructure.sourcelink.json
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\bin\Debug\net10.0\ShipmentLedger.Application.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Infrastructure\bin\Debug\net10.0\ShipmentLedger.Application.pdb
