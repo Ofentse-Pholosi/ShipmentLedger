@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShipmentLedger.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0af465554790e7a149c053579f8379c675d6fbea")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShipmentLedger.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShipmentLedger.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
