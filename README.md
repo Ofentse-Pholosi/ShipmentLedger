@@ -16,8 +16,8 @@ webhook events.
 | 4 | Query handlers | Complete |
 | 5 | API layer wiring | Complete |
 | 6 | Automated tests | Complete |
-| 7 | Change request | In Progress |
-| 8 | Documentation & ADRs | Pending |
+| 7 | Change request | Complete |
+| 8 | Documentation & ADRs | Complete |
 
 ---
 
@@ -280,45 +280,201 @@ scenario was anticipated when the deduplication strategy was originally designed
 
 ## Architecture Decision Records
 
-*(Full ADRs to be written in Phase 8.)*
+### ADR-1: Database UNIQUE constraints as the primary deduplication mechanism
 
-**ADR-1: Database UNIQUE constraints for deduplication**
-Decision, alternatives considered, and rationale — Phase 8.
+**Status:** Accepted
 
-**ADR-2: `occurredAt`-based state resolution**
-Decision, alternatives considered, and rationale — Phase 8.
+**Context:**
+Courier webhooks arrive over unreliable networks. The same event can be delivered more than
+once — by the courier retrying on timeout, by network infrastructure replaying requests, or
+by our own service restarting mid-request. The system must guarantee that each real-world
+event is stored exactly once regardless of how many times the HTTP call is made.
+
+**Decision:**
+Use SQL Server `UNIQUE` constraints as the enforcement point for deduplication, backed by
+two indexes:
+1. `UNIQUE (Partner, EventId) WHERE EventId IS NOT NULL` — for partners with stable IDs
+2. `UNIQUE (ContentHash)` — for all partners, using `SHA256(partner|shipmentId|status|occurredAt)`
+
+Application-level pre-checks exist as a performance optimisation (avoid reaching the
+constraint for known duplicates), but the constraint is the authority.
+
+**Alternatives considered:**
+
+| Alternative | Why rejected |
+|---|---|
+| In-memory `HashSet` of seen IDs | Lost on service restart; doesn't survive horizontal scaling |
+| Application-level idempotency table with explicit lock | Race condition window between check and insert; requires distributed lock for scale |
+| Redis cache of recent event IDs | Adds infrastructure dependency; cache expiry creates a correctness window |
+| Optimistic concurrency / ETag | Does not prevent duplicates — only detects write conflicts |
+
+**Consequences:**
+- Deduplication is correct under concurrent requests without application-level locking
+- The database is the single source of truth — no in-memory state to synchronise
+- A race condition between the pre-check and the constraint is handled gracefully by the
+  DB rejecting the second writer with a unique violation; the known limitation is that this
+  currently surfaces as a `500` rather than a `Duplicate` outcome (documented in Known
+  limitations — fixable by catching `DbUpdateException` with SQL error 2601/2627)
+
+---
+
+### ADR-2: `occurredAt`-based state resolution
+
+**Status:** Accepted
+
+**Context:**
+Events arrive out of order. A `Delivered` event from 14:00 may arrive before an `InTransit`
+event from 10:00. The system must decide which event's status represents the true current
+state of a shipment, and it must do so consistently even as late events continue to arrive.
+
+**Decision:**
+The `Shipments` table tracks the status from the event with the **highest `occurredAt`**
+value seen so far. When a new event arrives:
+- If its `occurredAt` is greater than the stored `StatusOccurredAt` → update state
+- If its `occurredAt` equals `StatusOccurredAt` → apply conflict rule (higher enum ordinal wins)
+- If its `occurredAt` is less than `StatusOccurredAt` → store for audit, do not update state
+
+All events are persisted regardless of outcome. The `Shipments` row is a materialised
+summary, not the record of truth — the `ShipmentEvents` table is.
+
+**Alternatives considered:**
+
+| Alternative | Why rejected |
+|---|---|
+| `receivedAt`-based ordering | Reflects our network latency and courier retry timing, not when the physical event happened. A courier retrying an old event would incorrectly advance state. |
+| Append-only with no current-state table | Every state read would require replaying the full event history — expensive and complex for queries |
+| Vector clocks / Lamport timestamps | Couriers don't provide logical clocks; would require us to assign them, which introduces our own ordering assumptions |
+| Last-write-wins on `receivedAt` | Same problem as `receivedAt`-based ordering |
+
+**Consequences:**
+- State reflects real-world event sequence, not network delivery order
+- Late-arriving older events are preserved in the audit trail and do not corrupt state
+- The system trusts the courier's `occurredAt` value — a misbehaving courier could backdate
+  events; a staleness window would mitigate this in production
 
 ---
 
 ## Development process note
 
-*(Full note to be written in Phase 8, covering AI tool usage, what was accepted,
-what was overridden, and at least one concrete divergence example.)*
+This project was developed with AI assistance (Claude, via Claude Code CLI) throughout all
+eight phases. The following documents how that assistance was used, what was accepted, and
+where the developer's judgement diverged from the AI's initial suggestions.
+
+### What AI assistance was used for
+
+- Scaffolding project structure and boilerplate (solution, csproj references, DI wiring)
+- Drafting handler logic and test cases based on described requirements
+- Resolving merge conflicts between diverging branches
+- Writing documentation sections from bullet-point briefs
+
+### What was directed by the developer
+
+The core design decisions were made by the developer before implementation began:
+
+- The payment ledger analogy as the framing for idempotency and immutability
+- The two-strategy dedup approach (eventId + content hash) and the rationale for each
+- The choice of `occurredAt` over `receivedAt` as the ordering authority
+- The decision to use direct `DbContext` injection rather than a repository abstraction
+- The conflict resolution rule (higher enum ordinal wins at the same timestamp)
+
+### Phased implementation approach
+
+Before any code was written, the developer defined an eight-phase implementation plan that
+structured the entire project from foundation to submission.
+
+The phases were ordered by dependency: Domain (no external dependencies) was built first,
+then Application logic, then Infrastructure, then the API layer, then tests, and finally
+documentation. This meant each layer had a stable contract before the next layer was built
+on top of it — mistakes were caught at the boundary where they were cheapest to fix.
+
+This approach had a direct impact on the quality of the outcome:
+
+- **Phase 3 (integrity rules) was complete before Phase 5 (API) existed.** The handler
+  logic was designed and reasoned about independently of HTTP concerns. When the API was
+  wired up, it was connecting to something already correct — not discovering correctness
+  problems through the API.
+
+- **The change request (Phase 7) required zero code changes** because Phase 2 had already
+  made `eventId` nullable and Phase 3 had already implemented content-hash dedup. The
+  phased plan forced those decisions to be made up front, before any partner sent an event
+  without an ID.
+
+- **The git history reflects the plan.** Each commit maps to a phase, making the
+  progression reviewable. The reviewer can check out any point in the history and see a
+  working, internally consistent system — not a series of half-finished states.
+
+### Concrete divergence example
+
+During Phase 4, the AI initially generated an `IShipmentLedgerDbContext` interface and
+wired handlers to depend on it rather than the concrete `ShipmentLedgerDbContext`. The
+intention was to make handlers testable without a real database.
+
+This was overridden for two reasons:
+
+1. **EF Core's `DbContext` already implements the unit-of-work pattern.** A hand-rolled
+   interface either leaks `IQueryable<T>` (making the abstraction a thin wrapper) or forces
+   one method per query shape (recreating the query builder in application code). Neither
+   adds value at this scale.
+
+2. **It created a circular project reference.** The interface lived in `Application`, but
+   `Infrastructure` needed to reference `Application` to implement it — while `Application`
+   already referenced `Infrastructure` for the concrete `DbContext`. This was caught during
+   a merge conflict resolution and resolved by deleting the interface entirely.
+
+The integration tests (using `WebApplicationFactory` against a real LocalDB) give handler
+logic adequate coverage without needing the abstraction.
 
 ---
 
 ## Run instructions
 
-*(To be finalised in Phase 5 once API endpoints are wired.)*
+**Prerequisites:** .NET 10 SDK · SQL Server LocalDB (included with Visual Studio)
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Ofentse-Pholosi/ShipmentLedger.git
 cd ShipmentLedger
 
-# Apply database migrations (creates LocalDB database automatically)
+# Apply database migrations (creates the LocalDB database automatically)
 dotnet ef database update \
   --project src/ShipmentLedger.Infrastructure \
   --startup-project src/ShipmentLedger.Api
 
 # Run the API
 dotnet run --project src/ShipmentLedger.Api
-# API available at https://localhost:5001
+```
 
-# Run all tests
+API is available at `http://localhost:5279`
+
+**Endpoints:**
+
+```
+POST   /shipment-events          Ingest a courier webhook event
+GET    /shipments/{id}           Current shipment state
+GET    /shipments/{id}/events    Full event audit trail
+GET    /health                   Liveness check
+```
+
+**Example — ingest an event:**
+```bash
+curl -X POST http://localhost:5279/shipment-events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventId": "evt-001",
+    "partner": "DHL",
+    "shipmentId": "SHIP-001",
+    "status": "InTransit",
+    "occurredAt": "2026-05-27T10:00:00Z",
+    "location": "Berlin Hub"
+  }'
+```
+
+**Run all tests:**
+```bash
 dotnet test
 ```
 
-**Prerequisites:** .NET 10 SDK · SQL Server LocalDB (ships with Visual Studio)
+> Integration tests require LocalDB. They create and drop a separate `ShipmentLedgerTests`
+> database automatically — the production `ShipmentLedger` database is not touched.
 
 ---
 
