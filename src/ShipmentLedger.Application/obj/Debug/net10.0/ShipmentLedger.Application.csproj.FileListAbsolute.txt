@@ -13,4 +13,3 @@ C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\refint\ShipmentLedger.Application.dll
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.pdb
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ref\ShipmentLedger.Application.dll
-C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.sourcelink.json

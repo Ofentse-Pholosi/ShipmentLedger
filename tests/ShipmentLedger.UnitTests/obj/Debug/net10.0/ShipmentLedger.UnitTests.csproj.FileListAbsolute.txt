@@ -108,4 +108,3 @@ C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.UnitTests\obj\Debug\
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.UnitTests\obj\Debug\net10.0\ShipmentLedger.UnitTests.pdb
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.UnitTests\obj\Debug\net10.0\ShipmentLedger.UnitTests.genruntimeconfig.cache
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.UnitTests\obj\Debug\net10.0\ref\ShipmentLedger.UnitTests.dll
-C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.UnitTests\obj\Debug\net10.0\ShipmentLedger.UnitTests.sourcelink.json
