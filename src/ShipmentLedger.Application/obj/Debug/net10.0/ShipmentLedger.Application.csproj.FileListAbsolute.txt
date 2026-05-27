@@ -1,0 +1,15 @@
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\bin\Debug\net10.0\ShipmentLedger.Application.deps.json
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\bin\Debug\net10.0\ShipmentLedger.Application.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\bin\Debug\net10.0\ShipmentLedger.Application.pdb
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\bin\Debug\net10.0\ShipmentLedger.Domain.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\bin\Debug\net10.0\ShipmentLedger.Domain.pdb
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.csproj.AssemblyReference.cache
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.AssemblyInfoInputs.cache
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.AssemblyInfo.cs
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.csproj.CoreCompileInputs.cache
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\Shipment.140FB30E.Up2Date
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\refint\ShipmentLedger.Application.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ShipmentLedger.Application.pdb
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Application\obj\Debug\net10.0\ref\ShipmentLedger.Application.dll
