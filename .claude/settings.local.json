@@ -5,9 +5,7 @@
       "Bash(dotnet tool *)",
       "PowerShell(Get-Service -Name 'MSSQLSERVER','MSSQL$SQLEXPRESS','MSSQL$LOCALDB' -ErrorAction SilentlyContinue)",
       "PowerShell(sqllocaldb info 2>$null)",
-      "PowerShell(if \\(-not $?\\) { \"LocalDB not found\" })",
-      "Bash(dotnet ef *)",
-      "Bash(dotnet build *)"
+      "PowerShell(if \\(-not $?\\) { \"LocalDB not found\" })"
     ]
   }
 }

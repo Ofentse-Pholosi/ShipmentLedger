@@ -257,32 +257,10 @@ Return `200` for duplicates (not `409`) because:
 - `409 Conflict` implies a corrective action is needed — nothing is needed here
 - The `outcome` field in the body communicates the distinction
 
-### Async nature — deliberate trade-off (document in README)
-Shipment webhooks share the same async pressures as payment events:
-- Couriers retry if no response arrives within their timeout window
-- Events from multiple couriers may arrive concurrently
-- The service could be unavailable when a courier sends an event
-
-**What our design already handles (without a queue):**
-- C# `async/await` throughout — DB calls are non-blocking, threads are never held
-- Courier retries → DB `UNIQUE` constraint catches the duplicate, no double-processing
-- Concurrent requests → single DB transaction serialises the state update atomically
-- Service restart → all state is durable in SQL Server, nothing in memory
-
-**What a production system would add (out of scope, document as known limitation):**
-- Durable ingestion queue (e.g. Azure Service Bus) so events survive service downtime
-- Background processor consuming from the queue, using the same handler logic
-- This would be a one-layer change — handler logic is unchanged, only the trigger moves
-
-**Key architectural point:** the design is queue-ready. The `IngestShipmentEventCommand`
-handler does not know or care whether it was triggered by an HTTP request or a queue
-consumer. Upgrading to async ingestion requires no changes to Phase 3 or Phase 4.
-
 ### Tasks
 - [ ] Wire `POST /shipment-events` → `IngestShipmentEventCommand`
 - [ ] Wire `GET /shipments/{shipmentId}` → `GetShipmentStateQuery`
 - [ ] Wire `GET /shipments/{shipmentId}/events` → `GetShipmentHistoryQuery`
-- [ ] Ensure all handlers use `async Task` signatures (MediatR default)
 - [ ] Add global exception middleware (returns `500` with problem details, never stack traces)
 - [ ] Add `GET /health` returning `{ "status": "healthy", "database": "reachable" }`
 - [ ] Add `AddProblemDetails()` for consistent error shapes
@@ -371,14 +349,10 @@ strategy already exists (Phase 3). The change request is absorbed by:
 **Goal:** Submission-ready README, 2 ADRs, and development process note.
 
 ### README sections
-- [ ] Problem framing (how you interpreted the brief) — include idempotency/immutable ledger analogy to payment events
+- [ ] Problem framing (how you interpreted the brief)
 - [ ] Assumptions made (explicit list)
 - [ ] Design choices and trade-offs
-- [ ] Known limitations — include synchronous webhook processing trade-off:
-  > Events are processed synchronously within the HTTP request. Under production load this
-  > should be replaced with a durable ingestion queue (e.g. Azure Service Bus) so events
-  > survive service downtime and couriers receive fast 202 responses. The handler logic
-  > is queue-ready and requires no changes — only the trigger point moves.
+- [ ] Known limitations
 - [ ] Run instructions (clone → run in < 5 minutes)
 - [ ] Change request: what changed, what stayed, what remains
 
