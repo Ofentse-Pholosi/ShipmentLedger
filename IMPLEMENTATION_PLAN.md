@@ -123,7 +123,7 @@ ProcessingNote   string?   (human-readable reason for the decision made)
 ## Phase 3 — Core Integrity Rules (IngestShipmentEventCommand)
 
 **Goal:** `POST /shipment-events` correctly handles all three integrity cases.  
-This is the most important phase. The integrity rules must be explicit, testable, and documented.
+
 
 ### MediatR command
 
@@ -168,7 +168,7 @@ IngestShipmentEventResult
 6. ALL DB WRITES in a single transaction (atomic dedup + state update)
 ```
 
-### Conflict rule (document explicitly)
+### Conflict rule:
 When two events share the same `occurredAt` but different status values:
 - The **higher enum ordinal wins** (more terminal state takes precedence)
 - Example: `DELIVERY_EXCEPTION` (index 5) beats `IN_TRANSIT` (index 2) at same timestamp
@@ -225,7 +225,7 @@ When two events share the same `occurredAt` but different status values:
 }
 ```
 
-### Ordering decision (document this)
+### Ordering decision
 Order by `occurredAt ASC`, then `ReceivedAt ASC` as tiebreaker.  
 Reason: history should reflect real-world event sequence, not the order we received them.
 
