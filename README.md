@@ -15,8 +15,8 @@ webhook events.
 | 3 | Core integrity rules (`IngestShipmentEventCommand`) | Complete |
 | 4 | Query handlers | Complete |
 | 5 | API layer wiring | Complete |
-| 6 | Automated tests | In Progresss |
-| 7 | Change request | Pending |
+| 6 | Automated tests | Complete |
+| 7 | Change request | In Progress |
 | 8 | Documentation & ADRs | Pending |
 
 ---
