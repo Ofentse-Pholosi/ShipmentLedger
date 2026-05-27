@@ -531,6 +531,9 @@
             "projectReferences": {
               "C:\\Projects\\Accso Technical Assignment\\src\\ShipmentLedger.Domain\\ShipmentLedger.Domain.csproj": {
                 "projectPath": "C:\\Projects\\Accso Technical Assignment\\src\\ShipmentLedger.Domain\\ShipmentLedger.Domain.csproj"
+              },
+              "C:\\Projects\\Accso Technical Assignment\\src\\ShipmentLedger.Infrastructure\\ShipmentLedger.Infrastructure.csproj": {
+                "projectPath": "C:\\Projects\\Accso Technical Assignment\\src\\ShipmentLedger.Infrastructure\\ShipmentLedger.Infrastructure.csproj"
               }
             }
           }
@@ -554,6 +557,10 @@
             "MediatR": {
               "target": "Package",
               "version": "[14.1.0, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[10.0.8, )"
             }
           },
           "imports": [

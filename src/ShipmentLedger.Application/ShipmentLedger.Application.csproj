@@ -2,10 +2,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ShipmentLedger.Domain\ShipmentLedger.Domain.csproj" />
+    <ProjectReference Include="..\ShipmentLedger.Infrastructure\ShipmentLedger.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="14.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
   </ItemGroup>
 
   <PropertyGroup>

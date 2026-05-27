@@ -1667,7 +1667,9 @@
       "ShipmentLedger.Application/1.0.0": {
         "dependencies": {
           "MediatR": "14.1.0",
-          "ShipmentLedger.Domain": "1.0.0"
+          "Microsoft.EntityFrameworkCore": "10.0.8",
+          "ShipmentLedger.Domain": "1.0.0",
+          "ShipmentLedger.Infrastructure": "1.0.0"
         },
         "runtime": {
           "ShipmentLedger.Application.dll": {
