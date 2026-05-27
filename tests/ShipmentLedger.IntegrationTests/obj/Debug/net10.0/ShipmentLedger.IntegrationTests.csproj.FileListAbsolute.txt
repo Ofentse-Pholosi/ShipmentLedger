@@ -468,3 +468,4 @@ C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.IntegrationTests\obj
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.IntegrationTests\obj\Debug\net10.0\ShipmentLedger.IntegrationTests.pdb
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.IntegrationTests\obj\Debug\net10.0\ShipmentLedger.IntegrationTests.genruntimeconfig.cache
 C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.IntegrationTests\obj\Debug\net10.0\ref\ShipmentLedger.IntegrationTests.dll
+C:\Projects\Accso Technical Assignment\tests\ShipmentLedger.IntegrationTests\obj\Debug\net10.0\ShipmentLedger.IntegrationTests.sourcelink.json

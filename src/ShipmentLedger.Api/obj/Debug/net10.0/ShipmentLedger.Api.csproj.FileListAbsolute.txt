@@ -162,3 +162,4 @@ C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Api\obj\Debug\net10.0\
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Api\obj\Debug\net10.0\ShipmentLedger.Api.pdb
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Api\obj\Debug\net10.0\ShipmentLedger.Api.genruntimeconfig.cache
 C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Api\obj\Debug\net10.0\ref\ShipmentLedger.Api.dll
+C:\Projects\Accso Technical Assignment\src\ShipmentLedger.Api\obj\Debug\net10.0\ShipmentLedger.Api.sourcelink.json
