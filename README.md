@@ -377,6 +377,32 @@ The core design decisions were made by the developer before implementation began
 - The decision to use direct `DbContext` injection rather than a repository abstraction
 - The conflict resolution rule (higher enum ordinal wins at the same timestamp)
 
+### Phased implementation approach
+
+Before any code was written, the developer defined an eight-phase implementation plan that
+structured the entire project from foundation to submission.
+
+The phases were ordered by dependency: Domain (no external dependencies) was built first,
+then Application logic, then Infrastructure, then the API layer, then tests, and finally
+documentation. This meant each layer had a stable contract before the next layer was built
+on top of it — mistakes were caught at the boundary where they were cheapest to fix.
+
+This approach had a direct impact on the quality of the outcome:
+
+- **Phase 3 (integrity rules) was complete before Phase 5 (API) existed.** The handler
+  logic was designed and reasoned about independently of HTTP concerns. When the API was
+  wired up, it was connecting to something already correct — not discovering correctness
+  problems through the API.
+
+- **The change request (Phase 7) required zero code changes** because Phase 2 had already
+  made `eventId` nullable and Phase 3 had already implemented content-hash dedup. The
+  phased plan forced those decisions to be made up front, before any partner sent an event
+  without an ID.
+
+- **The git history reflects the plan.** Each commit maps to a phase, making the
+  progression reviewable. The reviewer can check out any point in the history and see a
+  working, internally consistent system — not a series of half-finished states.
+
 ### Concrete divergence example
 
 During Phase 4, the AI initially generated an `IShipmentLedgerDbContext` interface and
