@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using ShipmentLedger.Application.Helpers;
 using ShipmentLedger.Domain.Entities;
 using ShipmentLedger.Domain.Enums;
@@ -113,6 +114,7 @@ public class IngestShipmentEventHandler(ShipmentLedgerDbContext db)
         }
     }
 
+    // Determines how to update (or not update) shipment state for an existing shipment
     private static (ProcessingStatus, string) ResolveUpdate(
         IngestShipmentEventCommand command,
         Shipment shipment)
@@ -154,7 +156,7 @@ public class IngestShipmentEventHandler(ShipmentLedgerDbContext db)
     }
 
     private static async Task<IngestShipmentEventResult> Rollback(
-        Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction transaction,
+        IDbContextTransaction transaction,
         IngestShipmentEventResult result,
         CancellationToken ct)
     {
