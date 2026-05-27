@@ -14,9 +14,9 @@ webhook events.
 | 2 | Domain model & database schema | Complete |
 | 3 | Core integrity rules (`IngestShipmentEventCommand`) | Complete |
 | 4 | Query handlers | Complete |
-| 5 | API layer wiring | In progress |
-| 6 | Automated tests | Pending |
-| 7 | Change request | Pending |
+| 5 | API layer wiring | Complete |
+| 6 | Automated tests | Complete |
+| 7 | Change request | In Progress |
 | 8 | Documentation & ADRs | Pending |
 
 ---
@@ -165,14 +165,116 @@ What a production system would add (documented known limitation):
 > *A new courier partner cannot provide a stable `eventId`. They resend the same update
 > multiple times, sometimes with different `receivedAt` values.*
 
-*(To be documented fully in Phase 7 — change request implementation.)*
+### Baseline commit before the change request
 
-**Short answer:** The design absorbs this change without schema modification.
-- `eventId` was nullable from day one — no schema change needed.
-- Content-hash dedup (strategy 2) already handles it — same content with different
-  `receivedAt` values produces the same hash and is rejected.
-- The only code change: ensure null `eventId` events skip strategy 1 and rely solely
-  on strategy 2. This is already implemented in the handler.
+**Commit:** `b267b6c` — *"Phase 6: unit tests and integration tests"*
+
+This is the snapshot of the complete, working system as it existed before the change
+request arrived. The diff between that commit and this one is the change request response.
+
+---
+
+### What the change request asked for
+
+A new courier partner (e.g. FedEx) cannot issue a stable `eventId` per event. Instead,
+they retry the same event multiple times until they receive an acknowledgement — and each
+retry may carry a different `receivedAt` timestamp because it is a new HTTP call. Example:
+
+```
+POST /shipment-events  { partner:"FedEx", shipmentId:"SHIP-001", status:"InTransit", occurredAt:"10:00", receivedAt:"10:05", eventId: null }
+POST /shipment-events  { partner:"FedEx", shipmentId:"SHIP-001", status:"InTransit", occurredAt:"10:00", receivedAt:"10:08", eventId: null }  ← retry
+POST /shipment-events  { partner:"FedEx", shipmentId:"SHIP-001", status:"InTransit", occurredAt:"10:00", receivedAt:"10:12", eventId: null }  ← retry
+```
+
+Without a deduplication strategy that accounts for absent `eventId`s, all three requests
+would be accepted, creating three audit entries for one real-world event.
+
+---
+
+### What changed in code
+
+**Nothing.** Zero lines of application code were modified.
+
+The original design anticipated this scenario:
+
+| Design decision | Why it absorbs the CR |
+|---|---|
+| `eventId` is `string?` (nullable) | No schema migration needed — the field was optional from day one |
+| Strategy 1 is guarded by `if (command.EventId is not null)` | Null-eventId partners automatically skip to strategy 2 |
+| Strategy 2 hashes `SHA256(partner\|shipmentId\|status\|occurredAt)` | `receivedAt` is deliberately excluded — retries with different `receivedAt` values produce the same hash |
+| `UNIQUE` constraint on `ContentHash` is already in the schema | The database enforces deduplication even under concurrent retries |
+
+The handler logic as written before the CR:
+
+```csharp
+// Strategy 1: stable eventId provided by the courier
+if (command.EventId is not null)
+{
+    var eventIdExists = await db.ShipmentEvents.AnyAsync(
+        e => e.Partner == command.Partner && e.EventId == command.EventId, ...);
+    if (eventIdExists) return Duplicate(...);
+}
+
+// Strategy 2: content hash — covers partners without stable eventIds
+var hashExists = await db.ShipmentEvents.AnyAsync(
+    e => e.ContentHash == contentHash, ...);
+if (hashExists) return Duplicate(...);
+```
+
+For a FedEx event with `eventId: null`, strategy 1 is skipped entirely. Strategy 2 catches
+all retries because the hash of the same real-world event is always identical regardless of
+`receivedAt`.
+
+---
+
+### Proof — test already passing before the CR
+
+The integration test `Ingest_DuplicateByContentHash_NoEventId_ReturnsConflict` was
+committed at `b267b6c` and was already green:
+
+```csharp
+[Fact]
+public async Task Ingest_DuplicateByContentHash_NoEventId_ReturnsConflict()
+{
+    // First ingest — no eventId
+    await PostEvent("SHIP-HASH-001", "FedEx", "HandedToCarrier", "2026-01-01T08:00:00Z", eventId: null);
+
+    // Exact same content, still no eventId — must be detected via content hash
+    var duplicate = await PostEvent("SHIP-HASH-001", "FedEx", "HandedToCarrier", "2026-01-01T08:00:00Z", eventId: null);
+
+    Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
+    Assert.Equal("Duplicate", body.Outcome);
+}
+```
+
+This test was not added *in response to* the CR — it was part of Phase 6 because the
+scenario was anticipated when the deduplication strategy was originally designed.
+
+---
+
+### What stayed the same
+
+- `ShipmentEvent` schema — no migration
+- Content hash computation — unchanged
+- State update and out-of-order logic — unchanged
+- History and query APIs — unchanged
+
+---
+
+### What a production system would still want
+
+- **Per-partner configuration:** A partner registry with an explicit `supportsStableEventId`
+  flag, rather than inferring intent from whether `eventId` is null. Makes the strategy
+  selection auditable and testable per partner.
+- **Staleness window:** Reject events with `occurredAt` older than N days. Prevents a
+  misbehaving unstable-ID partner from flooding with old content that still passes the
+  hash check (because `occurredAt` is part of the hash, old events produce unique hashes
+  indefinitely).
+- **Rate limiting per partner:** An unstable-ID partner that varies `status` or `occurredAt`
+  slightly between retries would produce unique hashes and all would be accepted. Rate
+  limiting provides a safety net against accidental flooding.
+- **Alerting on hash collision rate:** If the content-hash rejection rate for a partner
+  spikes, it may indicate data quality issues worth investigating.
 
 ---
 
