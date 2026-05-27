@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using ShipmentLedger.Application.Interfaces;
 using ShipmentLedger.Domain.Entities;
 
 namespace ShipmentLedger.Infrastructure.Persistence;
 
 public class ShipmentLedgerDbContext(DbContextOptions<ShipmentLedgerDbContext> options)
-    : DbContext(options), IShipmentLedgerDbContext
+    : DbContext(options)
 {
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentEvent> ShipmentEvents => Set<ShipmentEvent>();

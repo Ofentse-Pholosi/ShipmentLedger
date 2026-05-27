@@ -1,0 +1,40 @@
+## Build output
+bin/
+obj/
+
+## User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+
+## NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+packages/
+nuget.config
+
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## VS Code
+.vscode/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Test results
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+## Environment / secrets
+.env
+*.local.json
+appsettings.local.json

@@ -6,7 +6,7 @@ namespace ShipmentLedger.Application.Helpers;
 
 public static class ContentHashHelper
 {
-    // Produces a 64-char lowercase hex string — matches DB column length constraint
+    // Produces a 64-char lowercase hex string — matches the DB column length constraint
     public static string Compute(string partner, string shipmentId, ShipmentStatus status, DateTime occurredAt)
     {
         var input = $"{partner}|{shipmentId}|{status}|{occurredAt:O}";

@@ -2,13 +2,13 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using ShipmentLedger.Application.Helpers;
-using ShipmentLedger.Application.Interfaces;
 using ShipmentLedger.Domain.Entities;
 using ShipmentLedger.Domain.Enums;
+using ShipmentLedger.Infrastructure.Persistence;
 
 namespace ShipmentLedger.Application.Features.ShipmentEvents.Commands.IngestShipmentEvent;
 
-public class IngestShipmentEventHandler(IShipmentLedgerDbContext db)
+public class IngestShipmentEventHandler(ShipmentLedgerDbContext db)
     : IRequestHandler<IngestShipmentEventCommand, IngestShipmentEventResult>
 {
     public async Task<IngestShipmentEventResult> Handle(
@@ -80,7 +80,7 @@ public class IngestShipmentEventHandler(IShipmentLedgerDbContext db)
                 (processingStatus, processingNote) = ResolveUpdate(command, shipment);
             }
 
-            // All non-duplicate events count toward the total, including out-of-order
+            // All non-duplicate events count — includes out-of-order (they are real events)
             shipment.EventCount++;
 
             db.ShipmentEvents.Add(new ShipmentEvent
@@ -132,7 +132,7 @@ public class IngestShipmentEventHandler(IShipmentLedgerDbContext db)
         }
 
         // Conflict: same timestamp from different sources — higher enum ordinal wins
-        // Rationale: higher ordinal = more terminal state (e.g. DELIVERED > IN_TRANSIT)
+        // Rationale: higher ordinal = more terminal state (e.g. Delivered > InTransit)
         if (command.OccurredAt == shipment.StatusOccurredAt)
         {
             if ((int)command.Status > (int)shipment.CurrentStatus)

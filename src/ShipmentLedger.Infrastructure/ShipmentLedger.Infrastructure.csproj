@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ShipmentLedger.Domain\ShipmentLedger.Domain.csproj" />
-    <ProjectReference Include="..\ShipmentLedger.Application\ShipmentLedger.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>
