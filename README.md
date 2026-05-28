@@ -57,8 +57,8 @@ replayed to reconstruct it. The `Shipments` table is a materialised view of that
   network latency and courier retry behaviour).
 - A shipment's current status should never regress due to a late-arriving older event.
 - Duplicate events are an expected operational condition, not an error. The response for
-  a detected duplicate is `200` with `outcome: Duplicate` rather than `409` — the caller's
-  intent has already been satisfied.
+  a detected duplicate is `409 Conflict` with `outcome: Duplicate` — this signals to the
+  caller that the event was already received and no state change occurred.
 - `eventId` values are scoped per partner. The same `eventId` from two different partners
   is not a duplicate.
 - All timestamps are treated as UTC.
@@ -144,9 +144,8 @@ What a production system would add (documented known limitation):
 - **Race condition window on pre-check:** The duplicate pre-check and insert are wrapped
   in a transaction, but under high concurrent load with identical events, two requests could
   both pass the pre-check before either commits. The DB constraint prevents data corruption
-  — the second writer receives a `DbUpdateException` which surfaces as `500` rather than a
-  graceful `200 / Duplicate`. In production: catch `DbUpdateException` with SQL error
-  2601/2627 and return `Duplicate` outcome.
+  — the second writer receives a `DbUpdateException` which is caught and mapped to a clean
+  `409 Conflict / Duplicate` response (SQL Server error codes 2601/2627).
 
 - **Synchronous processing:** See above. Production would use a durable queue.
 
@@ -312,9 +311,8 @@ constraint for known duplicates), but the constraint is the authority.
 - Deduplication is correct under concurrent requests without application-level locking
 - The database is the single source of truth — no in-memory state to synchronise
 - A race condition between the pre-check and the constraint is handled gracefully by the
-  DB rejecting the second writer with a unique violation; the known limitation is that this
-  currently surfaces as a `500` rather than a `Duplicate` outcome (documented in Known
-  limitations — fixable by catching `DbUpdateException` with SQL error 2601/2627)
+  DB rejecting the second writer with a unique violation; `DbUpdateException` with SQL
+  error 2601/2627 is caught in the handler and mapped to a clean `Duplicate` outcome
 
 ---
 

@@ -107,6 +107,14 @@ public class IngestShipmentEventHandler(ShipmentLedgerDbContext db)
                 processingNote,
                 command.ShipmentId);
         }
+        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return new IngestShipmentEventResult(
+                IngestOutcome.Duplicate,
+                $"Concurrent duplicate submission for shipment '{command.ShipmentId}'",
+                command.ShipmentId);
+        }
         catch
         {
             await transaction.RollbackAsync(cancellationToken);
@@ -153,6 +161,15 @@ public class IngestShipmentEventHandler(ShipmentLedgerDbContext db)
         // Out-of-order: event predates current state — store for audit, do not regress state
         return (ProcessingStatus.AcceptedOutOfOrder,
             $"Out-of-order: event occurredAt {command.OccurredAt:O} precedes current state time {shipment.StatusOccurredAt:O}");
+    }
+
+    // SQL Server error 2601 = duplicate key row, 2627 = unique constraint violation
+    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+    {
+        var inner = ex.InnerException;
+        if (inner is null) return false;
+        var numberProp = inner.GetType().GetProperty("Number");
+        return numberProp?.GetValue(inner) is int n && n is 2601 or 2627;
     }
 
     private static async Task<IngestShipmentEventResult> Rollback(
